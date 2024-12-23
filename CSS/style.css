@@ -161,11 +161,16 @@
     transition: all 0.3s ease;
 }
 
+.history-container li:hover .history{
+    transform: scale(0.9);
+}
+
 .history{
     font-size: 14px;
     white-space: nowrap;   
     overflow: hidden;         
     text-overflow: ellipsis; 
+    transition: all 0.3s ease;
 }
 
 .options{
