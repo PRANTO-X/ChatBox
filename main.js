@@ -14,8 +14,14 @@ let history = [];
 
 // Sidebar Control
 sidebarBtn.addEventListener('click', () => {
+    sidebarBtn.classList.toggle('collapse');
     sideBar.classList.toggle('collapse');
     container.classList.toggle('collapse');
+    if(sidebarBtn.classList.contains('collapse')){
+        sidebarBtn.innerHTML = `<i class="bi bi-layout-sidebar-inset"></i>`;
+    }else{
+        sidebarBtn.innerHTML = `<i class="bi bi-layout-sidebar-inset-reverse"></i>`;
+    }
 });
 
 // Show header and save 
@@ -371,3 +377,5 @@ let scrollBottom = () => {
         behavior: "smooth",
     });
 };
+
+

@@ -10,16 +10,16 @@
 </head>
 <body>
     <div class="container">
-        <div id="sidebar" >
+        <div id="sidebar">
             <header>
                 <div id="type-control">
                     <div class="theme-btn" --data-theme="sun"><i class="bi bi-brightness-high"></i></div>
                 </div>
 
-                <div class="sidebar-btn"><i class="bi bi-layout-sidebar"></i></div>
+                <div class="sidebar-btn"><i class="bi bi-layout-sidebar-inset-reverse"></i></div>
             </header>
            <div class="sidebar-body">
-            <div class="new-chat-btn"><i class="bi bi-plus-lg"></i></div>
+            <div class="new-chat-btn"><i class="bi bi-plus"></i>New Chat</div>
 
             <h2 class="title">History</h2>
             <ul class="history-container"> 
@@ -47,8 +47,14 @@
             <div class="typing-container">
                 <div class="typing-content">
                     <div class="typing-textarea">
-                        <textarea class="chat-input" name="" id="" placeholder="type here" required></textarea>
-                        <span class="send-btn"><i class="bi bi-send"></i></i></span>
+                        <div class="text-input-area">
+                            <textarea class="chat-input" name="" id="" placeholder="type here" required></textarea>
+                            <span class="send-btn"><i class="bi bi-send"></i></i></span>
+                        </div>
+                        <div class="file-input-area">
+                            <label for="file-input" class="file-label"><i class="bi bi-image"></i></label>
+                            <input type="file" accept="image/*" id="file-input">
+                        </div>
                     </div>
                 </div>
             </div>
