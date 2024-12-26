@@ -70,7 +70,7 @@ let storeHistory = () => {
                 </span>
             </div>`;
 
-        chatList.querySelector('.history').textContent = chat.text;
+        chatList.querySelector('.history').textContent = chat.text ? chat.text : chat.name;
 
         // Append the new chat item at the top
         historyContainer.prepend(chatList);
@@ -90,14 +90,16 @@ let deleteChat = (btn)=>{
    
     let removeChat = btn.closest('li'); 
     let removeChatText = removeChat.querySelector('.history').textContent;
-    let removeChatIndex = history.findIndex(chat =>chat.text===removeChatText);
+    let removeChatIndex = history.findIndex(chat =>
+        chat.text===removeChatText || chat.name===removeChatText
+    );
+    
     if(removeChatIndex!==-1){
         history.splice(removeChatIndex,1);
         saveHistory();
         removeChat.remove();
     }
-    
-}
+};
  
 // search chat
 let searchChat = (btn)=>{
@@ -129,7 +131,7 @@ let getResponse = async (userMessage)=>{
 // Handling incoming chat
 let incomingChat = async (userMessage)=>{
     let botResponse = await getResponse(userMessage);
-
+    let botMessage = botResponse ? botResponse : null;
     let loaderDiv = document.querySelector('.loader-container');
     if(loaderDiv){
         loaderDiv.remove();
@@ -149,68 +151,163 @@ let incomingChat = async (userMessage)=>{
     chatIncomingDiv.querySelector('p').textContent = botResponse;
 
     scrollBottom();
+    return botMessage;
 }
 
-// Handling outgoing chat
-let outgoingChat = (message)=>{
-    let userMessage = message || chatInput.value.trim();
-    if(userMessage == "") return;
 
-    history.push({ text: userMessage, rendered: false });
+// Handling outgoing chat
+let outgoingChat =async (message,file)=>{
+    let userMessage = message || chatInput.value.trim();
+    let img = file;
+    let imgName = img ? img.name : null;
+    let imgUrl = img ? URL.createObjectURL(img) : null;
+    if(userMessage == "" && !img) return;
+
+    
     if(!firsMessageSent){
         header.style.display = 'none';
-        firsMessage = true;
+        firsMessageSent = true;
+    }
+    
+    if(userMessage || img){
+        let html = `<div class="chat-content">
+        <div class="edit-icon">
+            <i onclick="editMessage(this)" class="bi bi-pen"></i>
+        </div>
+        <div class="chat-detail">
+            ${img ? `<div class="img-detail">
+                <img src="${imgUrl}" alt="Preview Image" class="preview-img">
+            </div>` : ''}
+            <p></p>
+        </div>
+    </div>`;
+
+        let outgoingChatDiv = createElement(html,'outgoing','slide-top');
+        chatContainer.appendChild(outgoingChatDiv);
+        outgoingChatDiv.querySelector('p').textContent = userMessage;
+        
+        scrollBottom();
+
+        fileInput.value = '';
+        chatInput.value = '';
     }
 
-       // Append the outgoing chat
-       let html = `<div class="chat-content">
-       <div class="edit-icon">
-           <i onclick="editMessage(this)" class="bi bi-pen"></i>
-       </div>
-       <div class="chat-detail">
-           <p></p>
-       </div>
-     </div>`;
-
-     let outgoingChatDiv = createElement(html,'outgoing','slide-top');
-     chatContainer.appendChild(outgoingChatDiv);
-     outgoingChatDiv.querySelector('p').textContent = userMessage;
-     storeHistory();
-     saveHistory();
-     scrollBottom();
-
-     chatInput.value = '';
+      let imgInput = InputArea.querySelector('.img-input');
+      if (imgInput) {
+        InputArea.removeChild(imgInput);
+        fileInput.value = '';
+    }    
+      selectedFile = null;
+      chatInput.value = '';
+    
     // add loader
     let loaderHtml = `<div class="chat-content">
     <div class="chat-detail">
         <div class="loader"></div>
     </div>
-</div>`;
+    </div>`;
 
 let loaderDiv = createElement(loaderHtml, "incoming", "loader-container");
 chatContainer.appendChild(loaderDiv);
 scrollBottom();
 
 // Fetch the bot's response after a delay
-setTimeout(() => incomingChat(userMessage), 500);
-scrollBottom();
-}
+setTimeout(async () => {
+    let botMessage = await incomingChat(userMessage);
+    // Push to history
+    history.push({ text: userMessage, name: imgName, image: imgUrl, response: botMessage, rendered: false });
+    storeHistory();
+    saveHistory();
+    scrollBottom();
+}, 1000);
+};
+
+// Handle image input
+let fileInput = document.querySelector('#file-input');
+let InputArea = document.querySelector('.input-area');
+let selectedFile = null;
+
+fileInput.addEventListener('change', (e) => {
+    let file = e.target.files[0];
+    selectedFile = file;
+    chatInput.focus();
+
+    if (file && file.type.startsWith('image/')) {
+        let reader = new FileReader();
+
+        reader.onload = (event) => {
+            // Remove existing image preview or loader
+            let existingPreview = document.querySelector('.image-container');
+            if (existingPreview) existingPreview.remove();
+            
+            // Create a container for the image and the loader
+            let previewImage = document.createElement('div');
+            previewImage.classList.add('image-container');
+            previewImage.innerHTML = `
+                <div class="img-loader"></div> 
+            `;
+
+            // Replace or append the image preview in the input area
+            let imgInput = InputArea.querySelector('.img-input');
+            if (!imgInput) {
+                imgInput = document.createElement('div');
+                imgInput.classList.add('img-input');
+                InputArea.prepend(imgInput);
+            }
+            
+           
+            imgInput.innerHTML = '';
+            imgInput.appendChild(previewImage);
+
+            // Show the image
+            setTimeout(() => {
+                // Remove loader
+                let loader = previewImage.querySelector('.img-loader');
+                if (loader) loader.remove();
+                
+                // Insert the image and the remove button
+                previewImage.innerHTML = `
+                    <img src="${event.target.result}" alt="Preview Image" class="preview-img">
+                    <button class="remove-btn">×</button>
+                `;
+                imgInput.appendChild(previewImage);
+                console.log(file.type);
+                // Handle remove button click
+                previewImage.querySelector('.remove-btn').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    imgInput.innerHTML = ''; 
+                    InputArea.removeChild(imgInput);
+                    fileInput.value = ''; 
+                    selectedFile = null;
+                    if(chatInput.value.trim() !== '') chatInput.focus(); 
+                });
+            }, 1000);
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
 
 // function for SendBtn
 
 sendBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    outgoingChat(); 
+    outgoingChat(null,selectedFile); 
 });
 
 chatInput.addEventListener('keydown', (e) => {
     if (e.key === "Enter") {
         e.preventDefault();
-        outgoingChat();
+        outgoingChat(null,selectedFile); 
     }
 });
 
 sendBtn.addEventListener('mousedown', (e) => { 
+    e.preventDefault();
+}); 
+
+
+fileInput.addEventListener('mousedown', (e) => { 
     e.preventDefault();
 }); 
 
@@ -224,22 +321,6 @@ chatInput.addEventListener('input', function() {
     } 
 });
 
-//Get root value
-let root = document.documentElement;
-
-let normalWidth = getComputedStyle(root).getPropertyValue('--min-width');
-let focusWidth = getComputedStyle(root).getPropertyValue('--max-width');
-
-// set input field width
-chatInput.addEventListener('focus', function(){
-    this.closest('.typing-content').style.maxWidth = focusWidth;
-});
-
-chatInput.addEventListener('blur', function(){
-    if (this.value.trim() === '') {
-        this.closest('.typing-content').style.maxWidth = normalWidth;
-    }
-});
 
 // function to handle theme
 
