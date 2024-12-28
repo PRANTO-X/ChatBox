@@ -35,7 +35,7 @@ window.addEventListener('load', () => {
         storedHistory.forEach((chat) => {
             history.push(chat);
         });
-        storeHistory();  // Call to store the history (optional based on your needs)
+        storeHistory();  
     }
 });
 
@@ -60,7 +60,11 @@ let storeHistory = () => {
         }
 
         chatList.innerHTML = `
-            <p class="history"></p>
+            <div class="history">
+                <i class="bi bi-chat-right-text-fill"></i>
+                <p class="history-text"></p>
+            </div>
+
             <div class="options">
                 <span class="delete-btn" onclick="deleteChat(this)">
                     <i class="bi bi-trash"></i>
@@ -70,7 +74,7 @@ let storeHistory = () => {
                 </span>
             </div>`;
 
-        chatList.querySelector('.history').textContent = chat.text ? chat.text : chat.name;
+        chatList.querySelector('.history-text').textContent = chat.text ? chat.text : chat.name;
 
         // Append the new chat item at the top
         historyContainer.prepend(chatList);
@@ -89,7 +93,7 @@ let storeHistory = () => {
 let deleteChat = (btn)=>{
    
     let removeChat = btn.closest('li'); 
-    let removeChatText = removeChat.querySelector('.history').textContent;
+    let removeChatText = removeChat.querySelector('.history-text').textContent;
     let removeChatIndex = history.findIndex(chat =>
         chat.text===removeChatText || chat.name===removeChatText
     );
@@ -102,18 +106,63 @@ let deleteChat = (btn)=>{
 };
  
 // search chat
-let searchChat = (btn)=>{
-    let searchChat = btn.closest('li'); 
-    let searchChatText = searchChat.querySelector('.history').textContent;
-    outgoingChat(searchChatText);
-    let chatIndex = history.findIndex(chat => chat.text === searchChatText);
+let searchChat = (btn) => {
+    // Get the text of the chat being searched
+    let searchChat = btn.closest('li');
+    let searchChatText = searchChat.querySelector('.history-text').textContent;
+
+    // Find the chat in history
+    let chatIndex = history.findIndex(chat => chat.text === searchChatText || chat.name === searchChatText);
+
     if (chatIndex !== -1) {
-        history.splice(chatIndex, 1);
-        saveHistory(); 
-        storeHistory(); 
+        let chat = history[chatIndex];
+
+        // Show header
+        if(!firsMessageSent){
+            header.style.display = 'none';
+            firsMessageSent = true;
+        }
+
+        // Display the outgoing chat
+        let outgoingHtml = `<div class="chat-content">
+            <div class="edit-icon">
+                <i onclick="editMessage(this)" class="bi bi-pen"></i>
+            </div>
+            <div class="chat-detail">
+                ${chat.image ? `<div class="img-detail">
+                    <img src="${chat.image}" alt="Preview Image" class="preview-img">
+                </div>` : ''}
+                <p></p>
+            </div>
+        </div>`;
+
+        let outgoingChatDiv = createElement(outgoingHtml, "outgoing", "slide-top");
+        chatContainer.appendChild(outgoingChatDiv);
+        outgoingChatDiv.querySelector('p').textContent = chat.text;
+
+        // Display the bot response
+        let incomingHtml = `
+            <div class="chat-content">
+                <div class="chat-detail">
+                    <p></p>
+                </div>
+                <div class="copy-icon">
+                    <i onclick="copyText(this)" class="bi bi-copy"></i>
+                </div>
+            </div>`;
+        let incomingChatDiv = createElement(incomingHtml, "incoming");
+        chatContainer.appendChild(incomingChatDiv);
+        incomingChatDiv.querySelector('p').textContent = chat.response;
+
+        // Save history again 
+        history.splice(chatIndex, 1); 
+        history.push(chat); 
+        storeHistory();
+
+        // Scroll to the bottom
+        scrollBottom();
     }
 };
- 
 
 // Create new chat
 function createElement(html, ...className) {

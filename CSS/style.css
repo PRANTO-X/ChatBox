@@ -180,7 +180,16 @@
 }
 
 .history{
-    font-size: 14px;
+    display: flex;
+    gap: 10px;
+    align-self: center;
+    font-size: 14px;  
+    font-weight: bold;
+    overflow: hidden;         
+    transition: all 0.3s ease;
+}
+
+.history-text{
     white-space: nowrap;   
     overflow: hidden;         
     text-overflow: ellipsis; 
